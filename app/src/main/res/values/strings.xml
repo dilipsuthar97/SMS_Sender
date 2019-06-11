@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SMS Sender</string>
+    <string name="intro_message">Before use this app make sure you import Excel file. \n\nThe Excel file sheet name should be \"Contact\" and the column name should be \"NUMBER\". \n\nAll the numbers you entered in Excel file should be start with 0 or without 0. \n\nDon\'t add +91 or 91 as prefix of mobile number.</string>
+</resources>
