@@ -80,6 +80,10 @@ class MainActivity : AppCompatActivity() {
                         Toasty.error(this@MainActivity, "No active network to send SMS.", Toasty.LENGTH_SHORT, true).show()
                     SmsManager.RESULT_ERROR_RADIO_OFF ->
                         Toasty.error(this@MainActivity, "SMS not sent!", Toasty.LENGTH_SHORT, true).show()
+                    SmsManager.RESULT_ERROR_GENERIC_FAILURE ->
+                        Toasty.error(this@MainActivity, "SMS not sent!", Toasty.LENGTH_SHORT, true).show()
+                    SmsManager.RESULT_ERROR_NULL_PDU ->
+                        Toasty.error(this@MainActivity, "SMS not sent!", Toasty.LENGTH_SHORT, true).show()
                 }
             }
         }, IntentFilter(SENT))
@@ -110,6 +114,10 @@ class MainActivity : AppCompatActivity() {
         initToolbar()
         initComponent()
 
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     private fun initToolbar() {
