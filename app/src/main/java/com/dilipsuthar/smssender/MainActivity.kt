@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.preference.PreferenceManager
@@ -40,8 +41,8 @@ class MainActivity : AppCompatActivity() {
         const val RC_CODE = 101
         const val SHOW_INTRO = "SHOW_INTRO"
         const val TAG = "debug_MainActivity"
-        const val SENT = "SMS_SENT"
-        const val DELIVERED = "SMS_DELIVERED"
+        //const val SENT = "SMS_SENT"
+        //const val DELIVERED = "SMS_DELIVERED"
     }
 
     // Views
@@ -55,11 +56,13 @@ class MainActivity : AppCompatActivity() {
     // Others
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var sharedPreferences: SharedPreferences
-    //private lateinit var progressDialog: ProgressDialog
     private var contactList: ArrayList<String> = ArrayList()
 
-    private lateinit var sentPI: PendingIntent
-    private lateinit var deliveredPI: PendingIntent
+    // Broadcasting
+    private lateinit var sentBroadcastReceiver: BroadcastReceiver
+    private lateinit var deliveredBroadcastReceiver: BroadcastReceiver
+    //private lateinit var sentPI: PendingIntent
+    //private lateinit var deliveredPI: PendingIntent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -68,10 +71,10 @@ class MainActivity : AppCompatActivity() {
         ButterKnife.bind(this)
 
         // Receiver listener for SMS
-        sentPI = PendingIntent.getBroadcast(this, 0, Intent(SENT), 0)
+       /* sentPI = PendingIntent.getBroadcast(this, 0, Intent(SENT), 0)
         deliveredPI = PendingIntent.getBroadcast(this, 0, Intent(DELIVERED), 0)
-        // --when the sms has been sent
-        this.registerReceiver(object : BroadcastReceiver() {
+        // --When the sms has been sent
+        sentBroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (resultCode) {
                     Activity.RESULT_OK ->
@@ -86,10 +89,11 @@ class MainActivity : AppCompatActivity() {
                         Toasty.error(this@MainActivity, "SMS not sent!", Toasty.LENGTH_SHORT, true).show()
                 }
             }
-        }, IntentFilter(SENT))
+        }
+        this.registerReceiver(sentBroadcastReceiver, IntentFilter(SENT))    // register receiver
 
         // --When SMS has been delivered
-        this.registerReceiver(object : BroadcastReceiver() {
+        deliveredBroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (resultCode) {
                     Activity.RESULT_OK ->
@@ -98,7 +102,8 @@ class MainActivity : AppCompatActivity() {
                         Toasty.error(this@MainActivity, "SMS not delivered.", Toasty.LENGTH_SHORT, true).show()
                 }
             }
-        }, IntentFilter(DELIVERED))
+        }
+        this.registerReceiver(deliveredBroadcastReceiver, IntentFilter(DELIVERED))    // register receiver*/
 
         Tools.setSystemBarColor(this, R.color.colorAccent)
         dbHelper = DatabaseHelper(this)
@@ -118,6 +123,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        this.unregisterReceiver(sentBroadcastReceiver)
+        this.unregisterReceiver(deliveredBroadcastReceiver)
     }
 
     private fun initToolbar() {
@@ -191,7 +198,9 @@ class MainActivity : AppCompatActivity() {
                 else if (contactList.isEmpty())
                     Snackbar.make(it, "First import contact list", Snackbar.LENGTH_SHORT).show()
                 else {
-                    progressSendSMS.show()
+
+                    // Send SMS using Sms API (need permission - SMS_SEND)
+                    /*progressSendSMS.show()
                     try {
                         val smsManager = SmsManager.getDefault()
                         for (number: String in contactList) {
@@ -203,7 +212,35 @@ class MainActivity : AppCompatActivity() {
                         e.printStackTrace()
                         progressSendSMS.dismiss()
                         Toasty.error(this@MainActivity, "SMS Failed to send, please try again!", Toasty.LENGTH_SHORT, true).show()
+                    }*/
+
+                    // Send SMS using SMS Intent
+                    val manufacturer = Build.MANUFACTURER   // It will return name of the mobile Manufacturer
+
+                    var numberString: String = "smsto:"
+                    for ((index, value) in contactList.withIndex()) {
+
+                        numberString = if (manufacturer == "samsung") {
+
+                            if (index < (contactList.size - 1))
+                                numberString.plus(value).plus(",")
+                            else
+                                numberString.plus(value)
+
+                        } else {
+
+                            if (index < (contactList.size - 1))
+                                numberString.plus(value).plus(";")
+                            else
+                                numberString.plus(value)
+
+                        }
+
                     }
+
+                    val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse(numberString))
+                    smsIntent.putExtra("sms_body", message)
+                    startActivity(smsIntent)
                 }
 
             } else

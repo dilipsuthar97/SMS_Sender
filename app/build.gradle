@@ -9,8 +9,8 @@ android {
         applicationId "com.dilipsuthar.smssender"
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 20502
-        versionName "2.0.502"
+        versionCode 10301
+        versionName "1.0.301"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
