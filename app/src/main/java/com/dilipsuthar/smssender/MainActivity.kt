@@ -35,6 +35,9 @@ import com.google.android.material.textfield.TextInputEditText
 import com.obsez.android.lib.filechooser.ChooserDialog
 import es.dmoral.toasty.Toasty
 
+/**
+ * Modified by Dilip on 17/06/2019
+ */
 class MainActivity : AppCompatActivity() {
 
     companion object {
