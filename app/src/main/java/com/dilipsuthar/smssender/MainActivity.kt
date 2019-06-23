@@ -112,8 +112,8 @@ class MainActivity : AppCompatActivity() {
         dbHelper = DatabaseHelper(this)
 
         // Request for permission
-        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.SEND_SMS,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+        ActivityCompat.requestPermissions(this,
+            arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE,
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE), RC_CODE)
 
         if (!sharedPreferences.getBoolean(SHOW_INTRO, false))
@@ -162,7 +162,8 @@ class MainActivity : AppCompatActivity() {
                                 val cursor = dbHelper.getData()
                                 contactList.clear()
                                 while (cursor.moveToNext()) {
-                                    contactList.add(cursor.getString(0))
+                                    if (cursor.getString(0).length > 1)
+                                        contactList.add(cursor.getString(0))
                                 }
 
                                 progressContactImport.dismiss()
@@ -179,7 +180,8 @@ class MainActivity : AppCompatActivity() {
                         })
                     }
                     .show()
-            }
+            } else
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), RC_CODE)
         }
 
         // Action show imported contacts
@@ -192,62 +194,63 @@ class MainActivity : AppCompatActivity() {
 
         // Action send sms
         sendSMS.setOnClickListener {
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
 
-                val message = fieldMessage.text.toString()
-                val progressSendSMS = showProgressDialog("Sending SMS", "please wait...")
-                if (message.isEmpty())
-                    fieldMessage.error = "Please enter message"
-                else if (contactList.isEmpty())
-                    Snackbar.make(it, "First import contact list", Snackbar.LENGTH_SHORT).show()
-                else {
+            val message = fieldMessage.text.toString()
+            if (message.isEmpty())
+                fieldMessage.error = "Please enter message"
+            else if (contactList.isEmpty())
+                Snackbar.make(it, "First import contact list", Snackbar.LENGTH_SHORT).show()
+            else {
 
-                    // Send SMS using Sms API (need permission - SMS_SEND)
-                    /*progressSendSMS.show()
-                    try {
-                        val smsManager = SmsManager.getDefault()
-                        for (number: String in contactList) {
-                            smsManager.sendTextMessage(number, null, message, sentPI, deliveredPI)
-                        }
-                        progressSendSMS.dismiss()
-                    } catch (e: Exception) {
-                        Log.d(TAG, e.message)
-                        e.printStackTrace()
-                        progressSendSMS.dismiss()
-                        Toasty.error(this@MainActivity, "SMS Failed to send, please try again!", Toasty.LENGTH_SHORT, true).show()
-                    }*/
+                // Send SMS using Sms API (need permission - SMS_SEND)
+                /*progressSendSMS.show()
+                try {
+                    val smsManager = SmsManager.getDefault()
+                    for (number: String in contactList) {
+                        smsManager.sendTextMessage(number, null, message, sentPI, deliveredPI)
+                    }
+                    progressSendSMS.dismiss()
+                } catch (e: Exception) {
+                    Log.d(TAG, e.message)
+                    e.printStackTrace()
+                    progressSendSMS.dismiss()
+                    Toasty.error(this@MainActivity, "SMS Failed to send, please try again!", Toasty.LENGTH_SHORT, true).show()
+                }*/
 
-                    // Send SMS using SMS Intent
-                    val manufacturer = Build.MANUFACTURER   // It will return name of the mobile Manufacturer
+                // Send SMS using SMS Intent
+                val manufacturer = Build.MANUFACTURER   // It will return name of the mobile Manufacturer
 
-                    var numberString: String = "smsto:"
-                    for ((index, value) in contactList.withIndex()) {
+                var numberString: String = "smsto:"
+                for ((index, value) in contactList.withIndex()) {
 
-                        numberString = if (manufacturer == "samsung") {
+                    numberString = if (manufacturer == "samsung") {
 
-                            if (index < (contactList.size - 1))
-                                numberString.plus(value).plus(",")
-                            else
-                                numberString.plus(value)
+                        if (index < (contactList.size - 1))
+                            numberString.plus(value).plus(",")
+                        else
+                            numberString.plus(value)
 
-                        } else {
+                    } else {
 
-                            if (index < (contactList.size - 1))
-                                numberString.plus(value).plus(";")
-                            else
-                                numberString.plus(value)
-
-                        }
+                        if (index < (contactList.size - 1))
+                            numberString.plus(value).plus(";")
+                        else
+                            numberString.plus(value)
 
                     }
 
-                    val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse(numberString))
-                    smsIntent.putExtra("sms_body", message)
-                    startActivity(smsIntent)
                 }
 
-            } else
-                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.SEND_SMS), RC_CODE)
+                val sendSmsIntent = Intent().apply {
+                    action = Intent.ACTION_SENDTO
+                    data = Uri.parse(numberString)
+                    putExtra("sms_body", message)
+                }
+
+                if (sendSmsIntent.resolveActivity(packageManager) != null)
+                    startActivity(sendSmsIntent)
+            }
+
         }
     }
 
